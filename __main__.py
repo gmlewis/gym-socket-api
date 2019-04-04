@@ -12,6 +12,8 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('-p', '--port', action='store', type=int,
                         dest='port', default=5001)
+    parser.add_argument('-r', '--retro', action='store_true',
+                        dest='retro')
     parser.add_argument('-u', '--universe', action='store_true',
                         dest='universe')
     parser.add_argument('-s', '--setup', action='store', type=str,

@@ -13,29 +13,31 @@ import (
 var byteOrder = binary.LittleEndian
 
 const (
-	packetReset             = 0
-	packetStep              = 1
-	packetGetSpace          = 2
-	packetSampleAction      = 3
-	packetMonitor           = 4
-	packetRender            = 5
-	packetUpload            = 6
-	packetUniverseConfigure = 7
-	packetUniverseWrap      = 8
+	packetReset = iota
+	packetStep
+	packetGetSpace
+	packetSampleAction
+	packetMonitor
+	packetRender
+	packetUpload
+	packetUniverseConfigure
+	packetUniverseWrap
+	packetRetroConfigure
+	packetRetroWrap
 )
 
 const (
-	observationJSON     = 0
-	observationByteList = 1
+	observationJSON = iota
+	observationByteList
 )
 
 const (
-	actionJSON = 0
+	actionJSON = iota
 )
 
 const (
-	actionSpace      = 0
-	observationSpace = 1
+	actionSpace = iota
+	observationSpace
 )
 
 func handshake(rw *bufio.ReadWriter, envName string) error {

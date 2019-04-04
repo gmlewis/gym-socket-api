@@ -12,7 +12,7 @@ import (
 
 const (
 	Host   = "localhost:5001"
-	Frames = 50
+	Frames = 2000
 )
 
 func main() {

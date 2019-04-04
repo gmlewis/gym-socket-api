@@ -12,6 +12,7 @@ import sys
 import proto
 import gym
 from gym import wrappers
+import retro_plugin
 import universe_plugin
 
 def main():
@@ -21,6 +22,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('--addr', action='store', type=str, dest='addr')
     parser.add_argument('--fd', action='store', type=int, dest='fd')
+    parser.add_argument('--retro', action='store_true', dest='retro')
     parser.add_argument('--universe', action='store_true', dest='universe')
     parser.add_argument('--setup', action='store', type=str, dest='setup_code')
     options = parser.parse_args()
@@ -38,6 +40,7 @@ def handle(sock_file, info):
     """
     try:
         uni = universe_plugin.Universe(info.universe)
+        retro = retro_plugin.Retro(info.retro)
         env = handshake(sock_file)
         try:
             loop(sock_file, uni, env)
@@ -45,7 +48,8 @@ def handle(sock_file, info):
             if not env is None:
                 env.close()
     except proto.ProtoException as exc:
-        log('%s gave error: %s' % (info.addr, str(exc)))
+        if str(exc) != 'EOF':
+            log('%s gave error: %s' % (info.addr, str(exc)))
 
 def handshake(sock):
     """
@@ -98,6 +102,10 @@ def loop(sock, uni, env):
             env = handle_universe_configure(sock, uni, env)
         elif pack_type == 'universe_wrap':
             env = handle_universe_wrap(sock, uni, env)
+        elif pack_type == 'retro_configure':
+            env = handle_retro_configure(sock, retro, env)
+        elif pack_type == 'retro_wrap':
+            env = handle_retro_wrap(sock, retro, env)
 
 def handle_reset(sock, env):
     """
@@ -112,6 +120,7 @@ def handle_step(sock, env):
     """
     action = proto.read_action(sock, env)
     obs, rew, done, info = env.step(action)
+    # print('GML: obs=%s, rew=%s, done=%s, info=%s' % (obs, rew, done, info))
     proto.write_obs(sock, env, obs)
     proto.write_reward(sock, rew)
     proto.write_bool(sock, done)
@@ -208,6 +217,33 @@ def handle_universe_wrap(sock, uni, env):
         env = uni.wrap(env, wrapper_name, json.loads(config_json))
         proto.write_field_str(sock, '')
     except universe_plugin.UniverseException as exc:
+        proto.write_field_str(sock, str(exc))
+    sock.flush()
+    return env
+
+def handle_retro_configure(sock, retro, env):
+    """
+    Configure a Retro environment.
+    """
+    config_json = proto.read_field_str(sock)
+    try:
+        env = retro.configure(env, json.loads(config_json))
+        proto.write_field_str(sock, '')
+    except retro_plugin.RetroException as exc:
+        proto.write_field_str(sock, str(exc))
+    sock.flush()
+    return env
+
+def handle_retro_wrap(sock, retro, env):
+    """
+    Wrap a Retro environment.
+    """
+    wrapper_name = proto.read_field_str(sock)
+    config_json = proto.read_field_str(sock)
+    try:
+        env = retro.wrap(env, wrapper_name, json.loads(config_json))
+        proto.write_field_str(sock, '')
+    except retro_plugin.RetroException as exc:
         proto.write_field_str(sock, str(exc))
     sock.flush()
     return env

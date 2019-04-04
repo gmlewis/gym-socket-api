@@ -36,7 +36,8 @@ def read_packet_type(sock):
     type_id = read_byte(sock)
     mapping = {0: 'reset', 1: 'step', 2: 'get_space', 3: 'sample_action',
                4: 'monitor', 5: 'render', 6: 'upload', 7: 'universe_configure',
-               8: 'universe_wrap'}
+               8: 'universe_wrap', 9: 'retro_configure',
+               10: 'retro_wrap'}
     if not type_id in mapping.keys():
         raise ProtoException('unknown packet type: ' + str(type_id))
     return mapping[type_id]
@@ -82,7 +83,9 @@ def write_obs(sock, env, obs):
         if obs.dtype == 'uint8':
             write_obs_byte_list(sock, obs)
             return
+    # print('GML: env.observation_space=%s, obs=%s' % (env.observation_space, obs))
     jsonable = to_jsonable(env.observation_space, obs)
+    # print('GML: jsonable=%s' % jsonable)
     write_obs_json(sock, jsonable)
 
 def write_obs_json(sock, jsonable):

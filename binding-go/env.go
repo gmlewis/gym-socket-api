@@ -56,6 +56,16 @@ type Env interface {
 	//
 	// The options argument may be nil.
 	UniverseWrap(wrapper string, options map[string]interface{}) error
+
+	// RetroConfigure configures a Retro environment.
+	//
+	// The options argument may be nil.
+	RetroConfigure(options map[string]interface{}) error
+
+	// RetroWrap wraps a Retro environment.
+	//
+	// The options argument may be nil.
+	RetroWrap(wrapper string, options map[string]interface{}) error
 }
 
 type connEnv struct {
@@ -230,6 +240,56 @@ func (c *connEnv) UniverseWrap(wrapper string,
 	c.CmdLock.Lock()
 	defer c.CmdLock.Unlock()
 	if err := writePacketType(c.Buf, packetUniverseWrap); err != nil {
+		return err
+	}
+	if err := writeByteField(c.Buf, []byte(wrapper)); err != nil {
+		return err
+	}
+	jsonData, err := json.Marshal(options)
+	if err != nil {
+		return err
+	}
+	if err := writeByteField(c.Buf, jsonData); err != nil {
+		return err
+	}
+	if err := c.Buf.Flush(); err != nil {
+		return err
+	}
+	return readErrorField(c.Buf)
+}
+
+func (c *connEnv) RetroConfigure(options map[string]interface{}) (err error) {
+	if options == nil {
+		options = map[string]interface{}{}
+	}
+	essentials.AddCtxTo("configure Retro environment", &err)
+	c.CmdLock.Lock()
+	defer c.CmdLock.Unlock()
+	if err := writePacketType(c.Buf, packetRetroConfigure); err != nil {
+		return err
+	}
+	jsonData, err := json.Marshal(options)
+	if err != nil {
+		return err
+	}
+	if err := writeByteField(c.Buf, jsonData); err != nil {
+		return err
+	}
+	if err := c.Buf.Flush(); err != nil {
+		return err
+	}
+	return readErrorField(c.Buf)
+}
+
+func (c *connEnv) RetroWrap(wrapper string,
+	options map[string]interface{}) (err error) {
+	if options == nil {
+		options = map[string]interface{}{}
+	}
+	essentials.AddCtxTo("wrap Retro environment", &err)
+	c.CmdLock.Lock()
+	defer c.CmdLock.Unlock()
+	if err := writePacketType(c.Buf, packetRetroWrap); err != nil {
 		return err
 	}
 	if err := writeByteField(c.Buf, []byte(wrapper)); err != nil {

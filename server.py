@@ -12,12 +12,13 @@ if sys.version_info >= (3, 0):
 else:
     import SocketServer as socketserver
 
-def serve(port=5001, universe=False, setup_code=''):
+def serve(port=5001, universe=False, retro=False, setup_code=''):
     """
     Run a server on the given port.
     """
     server = Server(('127.0.0.1', port), Handler)
     server.universe = universe
+    server.retro = retro
     server.setup_code = setup_code
     print('Listening on port ' + str(port) + '...')
     server.serve_forever()
@@ -28,6 +29,7 @@ class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
     """
     allow_reuse_address = True
     universe = False
+    retro = False
     setup_code = ''
 
 class Handler(socketserver.BaseRequestHandler):
@@ -49,6 +51,8 @@ class Handler(socketserver.BaseRequestHandler):
 
         if self.server.universe:
             args.append('--universe')
+        if self.server.retro:
+            args.append('--retro')
 
         # Greatly reduces latency on Linux.
         if sys.platform in ['linux', 'linux2', 'darwin']:
